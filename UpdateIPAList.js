@@ -182,15 +182,14 @@ function UpdateSheet(examName, year, period, examType, qNo, result, dueDate) {
     }
   }
 
-  console.log("試験名：" + examName);
-  console.log("年度  ：" + year);
-  console.log("時期  ：" + period);
-  console.log("試験区分：" + examType);
-  console.log("設問  ：" + qNo);
-  console.log("回答結果：" + result);
-  console.log("回答日時：" + dueDate);
- 
-  console.log("Row：" + filteredCellRow);
+  console.log("試験名："  + examName + '\n' +
+              "年度  ："  + year + '\n' +
+              "時期  ："  + period + '\n' +
+              "試験区分：" + examType + '\n' +
+              "設問  ："  + qNo + '\n' +
+              "回答結果：" + result + '\n' +
+              "回答日時：" + dueDate + '\n\n' +
+              "Row：" + filteredCellRow);
 
   Sheet.getRange("K" + filteredCellRow).setValue(result);
   Sheet.getRange("L" + filteredCellRow).setValue(dueDate);
