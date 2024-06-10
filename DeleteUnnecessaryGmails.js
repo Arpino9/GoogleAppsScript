@@ -1,17 +1,17 @@
 const deleteAddress = ["no-reply@accounts.google.com",
-                    "noreply-apps-scripts-notifications@google.com",
-                    "verify@x.com"];
+                       "noreply-apps-scripts-notifications@google.com",
+                       "verify@x.com"];
 
 //=============================
 // Function：DeleteUnnecessaryGmails
-//  Outline：指定されたメールアドレスを削除する
+//  Outline：指定されたメールアドレスを削除
 //-----------------------------
 //   Create：2024/06/10
 //   Update：  
 //=============================
 function DeleteUnnecessaryGmails() {
   // 削除対象期間を設定したい場合、たとえば「newer_than:3d」のようにすると直近3日が対象になる。
-  var deleteThreads = GmailApp.search('newer_than:1d -is:starred -is:important');
+  let deleteThreads = GmailApp.search('newer_than:1d -is:starred -is:important');
   Logger.log('該当スレッド: ' + deleteThreads.length + '件');
   for (var i = 0; i < deleteThreads.length; i++) 
   {
@@ -21,7 +21,7 @@ function DeleteUnnecessaryGmails() {
       let slicedFrom = DivideMailAddress(messages[j].getFrom());
 
        if (deleteAddress.includes(slicedFrom)){
-          console.log(messages[j].getSubject() + "を削除しました。");
+          Logger.log(messages[j].getSubject() + "を削除しました。");
           deleteThreads[j].moveToTrash();
        }
     }
@@ -32,7 +32,7 @@ function DeleteUnnecessaryGmails() {
 // Function：DivideMailAddress
 //  Outline：送信者アドレスが<>内にあれば切り出す
 //    Param：fromAddress     (受信アドレス)
-//   Return：slicedFrom (送信者の正式なアドレス)
+//   Return：numSlicedFromTop (先頭からの位置)
 //-----------------------------
 //   Create：2024/06/10
 //   Update：  
