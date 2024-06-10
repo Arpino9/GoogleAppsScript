@@ -11,7 +11,7 @@ const CompletedMax = 12;
 // シート名
 const SheetName = "ToDo";
 // シートID(シートURLの「https://docs.google.com/spreadsheets/d/」から「/edit#gid=0」までの文字列)
-const SpreadSheetId = "1tc5uFTh09PBVVnV2OYmGZ3svY6C-6SwCAF6KIUO8l9c";
+const SpreadSheetId = "";
 // カラム数
 const ColumnCount = 3;
 // 出力開始行
