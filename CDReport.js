@@ -5,8 +5,8 @@ const EventColor = CalendarApp.EventColor.YELLOW;
 const LoadingStartDate = "2008/01/01 00:00";
 
 // 【SpreadSheet設定】--------------------------------------------------------
-// シートID
-const SheetID = "191fTeVKET2K5yZ6trFewRV3_8GJ80s8qC92-NtgNvv0";
+// スプレッドシートID
+const SheetID = "";
 // 登録用シート名
 const RegisteringSheetName = "登録(CD)"
 // 取得用シート名
