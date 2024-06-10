@@ -1,9 +1,9 @@
 // CSV
-const FolderId_CSV = '1R4PViHvJ2bg0zW7nKJSrvxF7s4ZocAgp';
+const FolderId_CSV = '';
 
 // Spreadsheet
-const SheetId = "1wztZPdsMW8dFwit3VJ-g0VhT8eTZA9gggnrMPDpxxpI";
-const SheetName = 'シート1';
+const SheetId = "";
+const SheetName = '';
 
 function myFunction() {
   const values = GetCSVValues(FolderId_CSV);
