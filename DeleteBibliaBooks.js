@@ -1,5 +1,5 @@
 // Spreadsheet
-const SheetId = "1wztZPdsMW8dFwit3VJ-g0VhT8eTZA9gggnrMPDpxxpI";
+const SheetId = "";
 const SheetName = 'シート1';
 
 function myFunction() {
