@@ -1,4 +1,4 @@
-const deleteInfo = ["no-reply@accounts.google.com",
+const deleteAddress = ["no-reply@accounts.google.com",
                     "noreply-apps-scripts-notifications@google.com",
                     "verify@x.com"];
 
@@ -20,7 +20,7 @@ function DeleteUnnecessaryGmails() {
     for (var j = 0; j < messages.length; j++){
       let slicedFrom = DivideMailAddress(messages[j].getFrom());
 
-       if (deleteInfo.includes(slicedFrom)){
+       if (deleteAddress.includes(slicedFrom)){
           console.log(messages[j].getSubject() + "を削除しました。");
           deleteThreads[j].moveToTrash();
        }
