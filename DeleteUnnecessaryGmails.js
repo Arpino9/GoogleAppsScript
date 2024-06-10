@@ -4,7 +4,7 @@ const deleteInfo = ["no-reply@accounts.google.com",
 
 //=============================
 // Function：DeleteUnnecessaryGmails
-//  Outline：指定されたメールアドレスを削除
+//  Outline：指定されたメールアドレスを削除する
 //-----------------------------
 //   Create：2024/06/10
 //   Update：  
@@ -32,7 +32,7 @@ function DeleteUnnecessaryGmails() {
 // Function：DivideMailAddress
 //  Outline：送信者アドレスが<>内にあれば切り出す
 //    Param：fromAddress     (受信アドレス)
-//   Return：numSlicedFromTop (先頭からの位置)
+//   Return：slicedFrom (送信者の正式なアドレス)
 //-----------------------------
 //   Create：2024/06/10
 //   Update：  
