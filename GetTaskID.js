@@ -5,7 +5,7 @@ const Questions = [];
 
 // シート名
 const SheetName = "タスク一覧";
-// シートID(シートURLの「https://docs.google.com/spreadsheets/d/」から「/edit#gid=0」までの文字列)
+// スプレッドシートID(シートURLの「https://docs.google.com/spreadsheets/d/」から「/edit#gid=0」までの文字列)
 const SpreadSheetId = "";
 // カラム数
 const ColumnCount = 2;
