@@ -4,6 +4,6 @@ function deleteOldGmails() {
   Logger.log('該当スレッド: ' + deleteThreads.length + '件');
   for (var i = 0; i < deleteThreads.length; i++) 
   {
-    deleteThreads[i].moveToTrash();
+    messages[j].moveToTrash();
   }
 }
