@@ -1,8 +1,8 @@
 function myFunction() {
   const url = "https://www.ap-siken.com/kakomon/06_haru/";
-  const res = UrlFetchApp.fetch(url);
   const SheetID = "";
-
+  
+  const res = UrlFetchApp.fetch(url);
   const context = res.getContentText();
   console.log(context);
 
