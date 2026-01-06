@@ -39,8 +39,10 @@ function FetchChildPages(pageID, sheetName) {
   const sheet = GetSheet(sheetName);
   ClearSheet(sheetName)
 
-  for(const childPage of childPages){    
+  //let row = sheet.getLastRow() + 1; 
+  for(const childPage of childPages){       
     const blocks = FetchAllBlocks(childPage.id);
+    //ExtractTextFromBlocks(sheet, childPage.title, blocks, row);
     ExtractTextFromBlocks(sheet, childPage.title, blocks);
   }
 }
@@ -81,8 +83,10 @@ function FetchAllBlocks(pageId) {
 /*
   Notionの1ブロックごとの書き込み用データを作る
 */
+//function ExtractTextFromBlocks(sheet, title, blocks, row) {
 function ExtractTextFromBlocks(sheet, title, blocks) {
   const rows = [];
+  //const rows2 = [];
  
   let currentRow = [
       title, // A列
@@ -92,6 +96,11 @@ function ExtractTextFromBlocks(sheet, title, blocks) {
       '',    // E列
       ''     // F列
     ];
+
+  //let currentRow2 = [
+  //    '',    // G列
+  //    ''     // H列
+  //  ];
 
   for (const block of blocks) {  
     if (
@@ -108,11 +117,11 @@ function ExtractTextFromBlocks(sheet, title, blocks) {
 
         currentRow[3] = values[0];
 
-        if (values.length >= 3){
+        if (values.length >= 2){
           currentRow[4] = values[1];
         }
 
-        if (values.length >= 4){
+        if (values.length >= 3){
           currentRow[5] = values[2];
         }
 
@@ -129,9 +138,23 @@ function ExtractTextFromBlocks(sheet, title, blocks) {
           currentRow[2] = '×';
         }
 
+        console.log('タイトル: ' + currentRow[0] + 
+                    ', 設問: ' + currentRow[1] + 
+                    ', 正誤: ' + currentRow[2] + 
+                    ', 完了日付1: ' + currentRow[3] + 
+                    ', 完了日付2: ' + currentRow[4] + 
+                    ', 完了日付3: ' + currentRow[5]);
+
         // ここまででcurrentRowが出そろったので、配列に入れる
+        //currentRow2[0] = '=AND(C'+row+'="〇",COUNTA(D'+row+':F'+row+')=3)';
+
+        //currentRow2[1] = '=DATE(LEFT(MAX(D'+row+':F'+row+'),4),MID(MAX(D'+row+':F'+row+'),6,2),RIGHT(MAX(D'+row+':F'+row+'),2))';
+
         rows.push(currentRow);
+        //rows2.push(currentRow2);
         currentRow = [title, '', '', '', '', ''];
+        //currentRow2 = ['',''];
+        //row++;
 
         break;
 
@@ -145,6 +168,9 @@ function ExtractTextFromBlocks(sheet, title, blocks) {
 
   sheet.getRange(startRow, 1, rows.length, rows[0].length)
        .setValues(rows);
+
+  //sheet.getRange(startRow, 7, rows2.length, rows2[0].length)
+  //     .setFormulas(rows2);
 }
 
 /*
