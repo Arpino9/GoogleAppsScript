@@ -17,6 +17,19 @@ const REPORT = '分析レポート';  // Sheet2 の名前
 // メインエントリーポイント（タイマートリガーで毎朝実行）
 // ============================================================
 function runDailyAnalysis() {
+  // 土日はスキップ
+  const day = new Date().getDay(); // 0=日, 1=月, ..., 6=土
+  if (day === 0 || day === 6) {
+    Logger.log('土日のためスキップ');
+    return;
+  }
+
+  // 祝日チェック（Googleカレンダーの日本祝日を利用）
+  if (isJapaneseHoliday()) {
+    Logger.log('祝日のためスキップ');
+    return;
+  }
+  
   const tickers = getActiveTickers();
   if (tickers.length === 0) return;
 
