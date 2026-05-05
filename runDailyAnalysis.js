@@ -343,3 +343,13 @@ function debugClaude() {
   Logger.log('ステータス: ' + res.getResponseCode());
   Logger.log('レスポンス: ' + res.getContentText()); // ← ここを確認
 }
+
+// ============================================================
+// 祝日判定（Googleカレンダーの日本祝日を利用）
+// ============================================================
+function isJapaneseHoliday() {
+  const today    = new Date();
+  const calendar = CalendarApp.getCalendarById('ja.japanese#holiday@group.v.calendar.google.com');
+  const events   = calendar.getEventsForDay(today);
+  return events.length > 0;
+}
