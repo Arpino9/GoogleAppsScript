@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>勤怠登録</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;700&display=swap');
+
+    :root {
+      --bg:        #0f0f11;
+      --surface:   #1a1a1f;
+      --border:    #2e2e38;
+      --accent:    #00e5a0;
+      --accent-dim:#00a872;
+      --text:      #e8e8ed;
+      --muted:     #6b6b7a;
+      --danger:    #ff5c5c;
+      --mono:      'DM Mono', monospace;
+      --sans:      'Noto Sans JP', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Layout ── */
+    .app {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 48px;
+    }
+
+    /* ── Header ── */
+    .header {
+      width: 100%;
+      max-width: 420px;
+      margin-bottom: 28px;
+    }
+    .header-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .header-title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .header-date {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* ── Card ── */
+    .card {
+      width: 100%;
+      max-width: 420px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    /* ── Field ── */
+    .field {
+      margin-bottom: 20px;
+    }
+    .field-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      display: block;
+    }
+    .field input[type="date"],
+    .field input[type="time"],
+    .field input[type="text"] {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 18px;
+      padding: 12px 14px;
+      outline: none;
+      transition: border-color 0.15s;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+    .field input[type="date"]:focus,
+    .field input[type="time"]:focus,
+    .field input[type="text"]:focus {
+      border-color: var(--accent);
+    }
+    /* iOSのカレンダーアイコン色 */
+    .field input[type="date"]::-webkit-calendar-picker-indicator,
+    .field input[type="time"]::-webkit-calendar-picker-indicator {
+      filter: invert(0.6);
+    }
+
+    /* ── Time row ── */
+    .time-row {
+      display: grid;
+      grid-template-columns: 1fr 24px 1fr;
+      align-items: end;
+      gap: 0;
+      margin-bottom: 20px;
+    }
+    .time-sep {
+      text-align: center;
+      font-family: var(--mono);
+      color: var(--muted);
+      font-size: 16px;
+      padding-bottom: 12px;
+    }
+
+    /* ── Duration badge ── */
+    .duration-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      background: rgba(0, 229, 160, 0.07);
+      border: 1px solid rgba(0, 229, 160, 0.2);
+      border-radius: 8px;
+      margin-bottom: 20px;
+      min-height: 42px;
+    }
+    .duration-badge .badge-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+    .duration-badge .badge-value {
+      font-family: var(--mono);
+      font-size: 16px;
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    /* ── Submit button ── */
+    .btn-submit {
+      width: 100%;
+      background: var(--accent);
+      color: #000;
+      font-family: var(--mono);
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border: none;
+      border-radius: 8px;
+      padding: 16px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-submit:active {
+      background: var(--accent-dim);
+      transform: scale(0.98);
+    }
+    .btn-submit:disabled {
+      background: var(--border);
+      color: var(--muted);
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 20px;
+      font-size: 13px;
+      line-height: 1.5;
+      max-width: 340px;
+      width: calc(100% - 32px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s;
+      opacity: 0;
+      z-index: 100;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+    .toast.success { border-color: var(--accent); }
+    .toast.error   { border-color: var(--danger); }
+    .toast-icon { font-size: 16px; margin-right: 6px; }
+    .toast-msg { color: var(--text); white-space: pre-line; }
+
+    /* ── Spinner ── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid rgba(0,0,0,0.3);
+      border-top-color: #000;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    /* ── History ── */
+    .history-header {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin: 28px 0 10px;
+      width: 100%;
+      max-width: 420px;
+    }
+    .history-list {
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .history-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .history-date {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .history-time {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--text);
+    }
+    .history-dur {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-label">Attendance</div>
+      <div class="header-title">勤怠登録</div>
+      <div class="header-date" id="headerDate"></div>
+    </div>
+
+    <!-- Form Card -->
+    <div class="card">
+      <!-- 日付 -->
+      <div class="field">
+        <label class="field-label" for="date">Date</label>
+        <input type="date" id="date">
+      </div>
+
+      <!-- 出勤・退勤 -->
+      <div class="time-row">
+        <div class="field" style="margin-bottom:0">
+          <label class="field-label" for="startTime">出勤</label>
+          <input type="time" id="startTime">
+        </div>
+        <div class="time-sep">—</div>
+        <div class="field" style="margin-bottom:0">
+          <label class="field-label" for="endTime">退勤</label>
+          <input type="time" id="endTime">
+        </div>
+      </div>
+
+      <!-- 勤務時間バッジ -->
+      <div class="duration-badge" id="durationBadge">
+        <span class="badge-label">勤務時間</span>
+        <span class="badge-value" id="durationVal">—</span>
+      </div>
+
+      <!-- 備考 -->
+      <div class="field">
+        <label class="field-label" for="memo">Memo（任意）</label>
+        <input type="text" id="memo" placeholder="例：在宅勤務、半休" maxlength="50">
+      </div>
+
+      <!-- 登録ボタン -->
+      <button class="btn-submit" id="submitBtn" onclick="submit()">
+        登録する
+      </button>
+    </div>
+
+    <!-- 登録履歴（直近3件） -->
+    <div class="history-header">Recent</div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+
+  <!-- Toast通知 -->
+  <div class="toast" id="toast">
+    <span class="toast-icon" id="toastIcon"></span>
+    <span class="toast-msg" id="toastMsg"></span>
+  </div>
+
+  <script>
+    // ── 初期化 ──────────────────────────────────────────────
+    (function init() {
+      const now = new Date();
+
+      // ヘッダー日付
+      const days = ['日','月','火','水','木','金','土'];
+      document.getElementById('headerDate').textContent =
+        `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日（${days[now.getDay()]}）`;
+
+      // 今日の日付をデフォルト
+      document.getElementById('date').value = toDateStr(now);
+
+      // 出退勤の初期値（任意で変更可）
+      document.getElementById('startTime').value = '09:00';
+      document.getElementById('endTime').value   = '18:00';
+
+      updateDuration();
+      loadHistory();
+    })();
+
+    // ── 勤務時間リアルタイム更新 ────────────────────────────
+    document.getElementById('startTime').addEventListener('change', updateDuration);
+    document.getElementById('endTime').addEventListener('change', updateDuration);
+
+    function updateDuration() {
+      const s = document.getElementById('startTime').value;
+      const e = document.getElementById('endTime').value;
+      const el = document.getElementById('durationVal');
+      if (!s || !e) { el.textContent = '—'; return; }
+      const diff = timeToMin(e) - timeToMin(s);
+      el.textContent = diff > 0 ? formatDur(diff) : '—';
+    }
+
+    function timeToMin(t) {
+      const [h, m] = t.split(':').map(Number);
+      return h * 60 + m;
+    }
+
+    function formatDur(min) {
+      const h = Math.floor(min / 60);
+      const m = min % 60;
+      return m === 0 ? `${h}h` : `${h}h ${m}m`;
+    }
+
+    // ── 登録処理 ────────────────────────────────────────────
+    function submit() {
+      const data = {
+        date:      document.getElementById('date').value,
+        startTime: document.getElementById('startTime').value,
+        endTime:   document.getElementById('endTime').value,
+        memo:      document.getElementById('memo').value.trim(),
+      };
+
+      if (!data.date || !data.startTime || !data.endTime) {
+        showToast('error', '⚠', '日付と時刻を入力してください。');
+        return;
+      }
+
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>登録中...';
+
+      google.script.run
+        .withSuccessHandler(function(res) {
+          btn.disabled = false;
+          btn.textContent = '登録する';
+          if (res.success) {
+            showToast('success', '✓', res.message);
+            saveHistory(data);
+            loadHistory();
+          } else {
+            showToast('error', '✕', res.message);
+          }
+        })
+        .withFailureHandler(function(err) {
+          btn.disabled = false;
+          btn.textContent = '登録する';
+          showToast('error', '✕', 'エラー: ' + err.message);
+        })
+        .registerAttendance(data);
+    }
+
+    // ── Toast ───────────────────────────────────────────────
+    let toastTimer;
+    function showToast(type, icon, msg) {
+      const t  = document.getElementById('toast');
+      const ti = document.getElementById('toastIcon');
+      const tm = document.getElementById('toastMsg');
+      t.className = `toast ${type}`;
+      ti.textContent = icon;
+      tm.textContent = msg;
+      void t.offsetWidth;
+      t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 4000);
+    }
+
+    // ── 履歴（localStorage） ────────────────────────────────
+    const HISTORY_KEY = 'kintai_history';
+
+    function saveHistory(data) {
+      const list = getHistory();
+      list.unshift({ ...data, savedAt: Date.now() });
+      const trimmed = list.slice(0, 10);
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(trimmed));
+    }
+
+    function getHistory() {
+      try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; }
+      catch { return []; }
+    }
+
+    function loadHistory() {
+      const list = getHistory().slice(0, 3);
+      const el = document.getElementById('historyList');
+      if (list.length === 0) {
+        el.innerHTML = '<div style="font-family:var(--mono);font-size:12px;color:var(--muted);text-align:center;padding:12px">登録履歴はまだありません</div>';
+        return;
+      }
+      el.innerHTML = list.map(h => {
+        const diff = timeToMin(h.endTime) - timeToMin(h.startTime);
+        return `
+          <div class="history-item">
+            <div>
+              <div class="history-date">${h.date.replace(/-/g, '/')}</div>
+              <div class="history-time">${h.startTime} 〜 ${h.endTime}</div>
+            </div>
+            <div class="history-dur">${diff > 0 ? formatDur(diff) : '—'}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ── Utility ─────────────────────────────────────────────
+    function toDateStr(d) {
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+  </script>
+</body>
+</html>
