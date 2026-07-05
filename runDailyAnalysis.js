@@ -29,7 +29,7 @@ function runDailyAnalysis() {
     Logger.log('祝日のためスキップ');
     return;
   }
-  
+
   const tickers = getActiveTickers();
   if (tickers.length === 0) return;
 
@@ -59,15 +59,20 @@ function getActiveTickers() {
   const sheet = SS.getSheetByName(LIST);
   const data  = sheet.getDataRange().getValues();
 
-  // ヘッダー行（1行目）をスキップ。D列（index=3）が TRUE/✓ の行のみ対象
   return data.slice(1)
     .filter(row => row[0] && (row[3] === true || row[3] === 'TRUE' || row[3] === '✓'))
     .map(row => ({
-      code:   String(row[0]).padStart(4, '0'), // 銘柄コード（4桁）
+      code:   String(row[0]).padStart(4, '0'),
       name:   row[1],
-      sector: row[2],
+      held:   isHeld(row[2]),   // C列: 保有有無（あり/なし）
       memo:   row[4] || ''
     }));
+}
+
+// 「あり」系の表記を柔軟に判定
+function isHeld(v) {
+  const s = String(v).trim();
+  return s === 'あり' || s === '有' || s === '○' || s === '保有' || v === true;
 }
 
 // ============================================================
@@ -162,29 +167,50 @@ function fmtDate(d) {
 //    Haiku モデルを使用（高速・低コスト）
 // ============================================================
 function analyzeWithClaude(ticker, data) {
-  const changeRate    = data.prevClose
+  const changeRate = data.prevClose
     ? ((data.close - data.prevClose) / data.prevClose * 100).toFixed(2)
     : 'N/A';
-  const volumeRatio   = data.avgVolume
+  const volumeRatio = data.avgVolume
     ? (data.volume / data.avgVolume).toFixed(2)
     : 'N/A';
   const vs25 = data.ma25 ? (data.close > data.ma25 ? '上' : '下') : '-';
   const vs75 = data.ma75 ? (data.close > data.ma75 ? '上' : '下') : '-';
 
-  const prompt = `あなたは日本株のテクニカル分析の専門家です。
-以下のデータをもとに、短期（数日〜1週間）の買い時かどうかを判断してください。
-
-【銘柄】${ticker.name}（${ticker.code}）  業種: ${ticker.sector}
+  const dataBlock = `【銘柄】${ticker.name}（${ticker.code}）
 【直近データ（${data.date}）】
 - 終値: ${data.close}円  前日比: ${changeRate}%
 - 出来高: ${data.volume}（20日平均比 ${volumeRatio}倍）
 - RSI(14): ${data.rsi}
 - 25日MA: ${data.ma25}円（終値は${vs25}）
 - 75日MA: ${data.ma75}円（終値は${vs75}）
-${ticker.memo ? `- 備考: ${ticker.memo}` : ''}
+${ticker.memo ? `- 備考: ${ticker.memo}` : ''}`;
 
+  const prompt = ticker.held
+    ? `あなたは日本株のテクニカル分析の専門家です。
+以下は投資家が既に「保有している」銘柄です。短期（数日〜1週間）の視点で、今が売り時か、それとも保有継続すべきかを判断し、投資初心者にも分かりやすく解説してください。
+
+${dataBlock}
+
+まず銘柄コードと銘柄名からこの銘柄の業種を特定し、それを踏まえて判断してください。
+回答に際して、国際情勢の動向と日経平均株価の傾向を加味するようにしてください。
 以下の JSON 形式のみで返してください（前後の文章や \`\`\` 不要）:
 {
+  "sector": "業種（例: 電気機器、非鉄金属 など）",
+  "verdict": "売り寄り" | "保有継続" | "一部利確",
+  "score": 1〜10の整数（10が最も強い売りシグナル）,
+  "comment": "分析コメント（80字以内）",
+  "risk": "保有継続した場合の主なリスク（30字以内）"
+}`
+    : `あなたは日本株のテクニカル分析の専門家です。
+以下のデータをもとに、短期（数日〜1週間）の買い時かどうかを判断し、投資初心者にも分かりやすく解説してください。
+
+${dataBlock}
+
+まず銘柄コードと銘柄名からこの銘柄の業種を特定し、それを踏まえて判断してください。
+回答に際して、国際情勢の動向と日経平均株価の傾向を加味するようにしてください。
+以下の JSON 形式のみで返してください（前後の文章や \`\`\` 不要）:
+{
+  "sector": "業種（例: 電気機器、非鉄金属 など）",
   "verdict": "買い寄り" | "様子見" | "見送り",
   "score": 1〜10の整数（10が最も強い買いシグナル）,
   "comment": "分析コメント（80字以内）",
@@ -192,14 +218,14 @@ ${ticker.memo ? `- 備考: ${ticker.memo}` : ''}
 }`;
 
   const res = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
-    method:             'post',
-    contentType:        'application/json',
+    method:      'post',
+    contentType: 'application/json',
     headers: {
-      'x-api-key':            PROPS.getProperty('CLAUDE_API_KEY'),
-      'anthropic-version':    '2023-06-01'
+      'x-api-key':         PROPS.getProperty('CLAUDE_API_KEY'),
+      'anthropic-version': '2023-06-01'
     },
     payload: JSON.stringify({
-      model:      'claude-haiku-4-5-20251001', // 高速・低コストモデル
+      model:      'claude-haiku-4-5-20251001',
       max_tokens: 256,
       messages:   [{ role: 'user', content: prompt }]
     }),
@@ -209,10 +235,15 @@ ${ticker.memo ? `- 備考: ${ticker.memo}` : ''}
   try {
     const raw  = JSON.parse(res.getContentText()).content[0].text;
     const json = raw.replace(/```json|```/g, '').trim();
-    return JSON.parse(json);
+    const parsed = JSON.parse(json);
+    parsed.held = ticker.held; // 後段の振り分け用
+    return parsed;
   } catch (e) {
     Logger.log(`Claude パースエラー: ${e.message}`);
-    return { verdict: '様子見', score: 5, comment: '分析エラー（要確認）', risk: '-' };
+    return {
+      verdict: ticker.held ? '保有継続' : '様子見',
+      score: 5, comment: '分析エラー（要確認）', risk: '-', held: ticker.held
+    };
   }
 }
 
@@ -225,16 +256,17 @@ function buildReportRow(ticker, data, analysis) {
     ? ((data.close - data.prevClose) / data.prevClose * 100).toFixed(2) + '%'
     : '-';
   return [
-    now,               // A: 実行日時
-    ticker.code,       // B: 銘柄コード
-    ticker.name,       // C: 銘柄名
-    data.close,        // D: 終値
-    changeRate,        // E: 前日比(%)
-    data.rsi,          // F: RSI
-    analysis.verdict,  // G: 判定
-    analysis.comment,  // H: AI分析コメント
-    analysis.risk,     // I: 主なリスク
-    analysis.score     // J: スコア(1-10)
+    now,                            // A: 実行日時
+    ticker.code,                    // B: 銘柄コード
+    ticker.name,                    // C: 銘柄名
+    ticker.held ? '保有中' : '未保有', // D: 保有区分
+    data.close,                     // E: 終値
+    changeRate,                     // F: 前日比(%)
+    data.rsi,                       // G: RSI
+    analysis.verdict,               // H: 判定
+    analysis.comment,               // I: AI分析コメント
+    analysis.risk,                  // J: 主なリスク
+    analysis.score                  // K: スコア
   ];
 }
 
@@ -247,11 +279,20 @@ function appendToReport(row) {
 // ============================================================
 function sendGmailReport(results) {
   const today   = Utilities.formatDate(new Date(), 'Asia/Tokyo', 'M月d日(E)');
-  const subject = `[株式分析] ${today} の買い時レポート`;
+  const subject = `[株式分析] ${today} の売買アドバイス`;
 
-  const buy   = results.filter(r => r.analysis.verdict === '買い寄り');
-  const watch = results.filter(r => r.analysis.verdict === '様子見');
-  const pass  = results.filter(r => r.analysis.verdict === '見送り');
+  const held    = results.filter(r => r.analysis.held);
+  const notHeld = results.filter(r => !r.analysis.held);
+
+  // 保有株：売りシグナルが強い順（score降順）
+  const sell   = held.filter(r => r.analysis.verdict === '売り寄り');
+  const trim   = held.filter(r => r.analysis.verdict === '一部利確');
+  const keep   = held.filter(r => r.analysis.verdict === '保有継続');
+
+  // 非保有株：買いシグナルが強い順
+  const buy    = notHeld.filter(r => r.analysis.verdict === '買い寄り');
+  const watch  = notHeld.filter(r => r.analysis.verdict === '様子見');
+  const pass   = notHeld.filter(r => r.analysis.verdict === '見送り');
 
   const section = (label, items) => {
     if (items.length === 0) return '';
@@ -271,9 +312,15 @@ function sendGmailReport(results) {
 
   const body = [
     `${'━'.repeat(44)}`,
-    `  ${today} 株式買い時分析レポート`,
+    `  ${today} 株式売買アドバイスレポート`,
     `${'━'.repeat(44)}`,
     '',
+    '【保有中の銘柄】',
+    section('売り寄り', sell),
+    section('一部利確', trim),
+    section('保有継続', keep),
+    '',
+    '【未保有の銘柄】',
     section('買い寄り', buy),
     section('様子見',   watch),
     section('見送り',   pass),
@@ -282,11 +329,7 @@ function sendGmailReport(results) {
     '※ 投資判断は必ずご自身の責任でお願いします。'
   ].join('\n');
 
-  GmailApp.sendEmail(
-    PROPS.getProperty('NOTIFY_EMAIL'),
-    subject,
-    body
-  );
+  GmailApp.sendEmail(PROPS.getProperty('NOTIFY_EMAIL'), subject, body);
   Logger.log(`Gmailを送信しました: ${subject}`);
 }
 
@@ -295,8 +338,8 @@ function sendGmailReport(results) {
 // ============================================================
 function setup() {
   PROPS.setProperties({
-    'CLAUDE_API_KEY': 'sk-ant-XXXXX',
-    'NOTIFY_EMAIL':   'XXXXX@XXXX.com'
+    'CLAUDE_API_KEY': '###',
+    'NOTIFY_EMAIL':   '###'
   });
   Logger.log('セットアップ完了');
 }
